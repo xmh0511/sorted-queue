@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::LinkedList;
 
 #[derive(Debug)]
 pub enum Error {
@@ -7,11 +7,16 @@ pub enum Error {
 
 #[derive(Debug)]
 #[repr(transparent)]
-pub struct SortedQueue<T: PartialOrd>(VecDeque<T>);
+pub struct SortedQueue<T: PartialOrd>(LinkedList<T>);
 
 impl<T: PartialOrd> SortedQueue<T> {
     pub fn new() -> Self {
-        SortedQueue(VecDeque::new())
+        SortedQueue(LinkedList::new())
+    }
+    fn insert(&mut self, index: usize, value: T) {
+        let mut tail = self.0.split_off(index);
+        self.0.push_back(value);
+        self.0.append(&mut tail);
     }
     pub fn push(&mut self, value: T) -> Result<(), Error> {
         let r = self
@@ -30,7 +35,7 @@ impl<T: PartialOrd> SortedQueue<T> {
             );
         match r {
             None => self.0.push_back(value),
-            Some(Ok(index)) => self.0.insert(index, value),
+            Some(Ok(index)) => self.insert(index, value),
             Some(Err(index)) => {
                 // panic!("This queue should be strict total order, however, the pushed value would equal to the element at index {index}");
                 return Err(Error::DuplicateAt(index));
@@ -42,7 +47,10 @@ impl<T: PartialOrd> SortedQueue<T> {
         self.0.pop_front()
     }
     pub fn remove(&mut self, index: usize) -> Option<T> {
-        self.0.remove(index)
+        let mut tail = self.0.split_off(index);
+        let r = tail.pop_front();
+        self.0.append(&mut tail);
+        r
     }
     pub fn len(&self) -> usize {
         self.0.len()
@@ -50,24 +58,22 @@ impl<T: PartialOrd> SortedQueue<T> {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
-    pub fn get(&self, index: usize) -> Option<&T> {
-        self.0.get(index)
-    }
+
     pub fn contains(&self, x: &T) -> bool {
         self.0.contains(x)
     }
     pub fn clear(&mut self) {
         self.0.clear();
     }
-    pub fn iter(&self) -> std::collections::vec_deque::Iter<'_, T> {
+    pub fn iter(&self) -> std::collections::linked_list::Iter<'_, T> {
         self.0.iter()
     }
 }
 
 impl<T: PartialOrd> IntoIterator for SortedQueue<T> {
-    type Item = <VecDeque<T> as IntoIterator>::Item;
+    type Item = <LinkedList<T> as IntoIterator>::Item;
 
-    type IntoIter = <VecDeque<T> as IntoIterator>::IntoIter;
+    type IntoIter = <LinkedList<T> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()

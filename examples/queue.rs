@@ -37,6 +37,16 @@ impl PartialOrd for Packet {
         }
     }
 }
+
+fn remove() {
+    let mut queue = SortedQueue::new();
+    queue.push(2).unwrap();
+    queue.push(1).unwrap();
+    queue.push(3).unwrap();
+    println!("{:?}", queue);
+    queue.remove(1);
+    println!("{:?}", queue);
+}
 fn main() {
     simple();
     let a = Packet(0, vec![1, 2, 3]);
@@ -45,4 +55,5 @@ fn main() {
     assert!(a < b);
     assert!(b < c);
     complex();
+    remove();
 }
