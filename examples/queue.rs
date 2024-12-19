@@ -16,6 +16,8 @@ fn complex() {
     queue.push(Packet(0, vec![1, 2, 3])).unwrap();
     queue.push(Packet(1, vec![1, 2, 3])).unwrap();
     println!("{:?}", queue);
+    queue.push_overwrite(Packet(1, vec![1, 2, 4])).unwrap();
+    println!("{:?}", queue);
     assert_eq!(queue.pop(), Some(Packet(0, vec![1, 2, 3])));
     assert_eq!(queue.pop(), Some(Packet(1, vec![1, 2, 3])));
     assert_eq!(queue.pop(), Some(Packet(1, vec![1, 2, 3, 4])));

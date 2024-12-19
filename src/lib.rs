@@ -1,8 +1,13 @@
-use std::collections::LinkedList;
+use std::{collections::LinkedList, fmt::Debug};
 
 #[derive(Debug)]
 pub enum Error {
     DuplicateAt(usize),
+}
+
+enum ErrorInner<T> {
+    DuplicateAt(usize),
+    Replace(T),
 }
 
 #[derive(Debug)]
@@ -18,30 +23,51 @@ impl<T: PartialOrd> SortedQueue<T> {
         self.0.push_back(value);
         self.0.append(&mut tail);
     }
-    pub fn push(&mut self, value: T) -> Result<(), Error> {
+    fn push_help(&mut self, mut value: T, overwrite: bool) -> Result<(), ErrorInner<T>> {
         let r = self
             .0
-            .iter()
+            .iter_mut()
             .enumerate()
-            .rfind(|(_index, ele)| value <= **ele)
-            .map(
-                |(index, ele)| {
-                    if *ele == value {
-                        Err(index)
-                    } else {
-                        Ok(index)
-                    }
-                },
-            );
+            .find(|(_index, ele)| value <= **ele)
+            .map(|(index, ele)| (index, ele));
         match r {
             None => self.0.push_back(value),
-            Some(Ok(index)) => self.insert(index, value),
-            Some(Err(index)) => {
-                // panic!("This queue should be strict total order, however, the pushed value would equal to the element at index {index}");
-                return Err(Error::DuplicateAt(index));
+            Some((index, ele)) => {
+                if *ele == value {
+                    if overwrite {
+                        std::mem::swap(ele, &mut value);
+                        return Err(ErrorInner::Replace(value));
+                    } else {
+                        return Err(ErrorInner::DuplicateAt(index));
+                    }
+                } else {
+                    if index == self.0.len() {
+                        self.0.push_back(value);
+                    } else {
+                        self.insert(index, value)
+                    }
+                }
             }
         }
         Ok(())
+    }
+    pub fn push(&mut self, value: T) -> Result<(), Error> {
+        self.push_help(value, false).map_err(|e| {
+            if let ErrorInner::DuplicateAt(index) = e {
+                Error::DuplicateAt(index)
+            } else {
+                unreachable!()
+            }
+        })
+    }
+    pub fn push_overwrite(&mut self, value: T) -> Option<T> {
+        match self.push_help(value, true) {
+            Ok(_) => None,
+            Err(ErrorInner::Replace(v)) => Some(v),
+            _ => {
+                unreachable!()
+            }
+        }
     }
     pub fn pop(&mut self) -> Option<T> {
         self.0.pop_front()
@@ -51,6 +77,12 @@ impl<T: PartialOrd> SortedQueue<T> {
         let r = tail.pop_front();
         self.0.append(&mut tail);
         r
+    }
+    pub fn front(&self) -> Option<&T> {
+        self.0.front()
+    }
+    pub fn back(&self) -> Option<&T> {
+        self.0.back()
     }
     pub fn len(&self) -> usize {
         self.0.len()
