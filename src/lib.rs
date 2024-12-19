@@ -28,10 +28,10 @@ impl<T: PartialOrd> SortedQueue<T> {
             .0
             .iter_mut()
             .enumerate()
-            .find(|(_index, ele)| value <= **ele)
+            .rfind(|(_index, ele)| value >= **ele)
             .map(|(index, ele)| (index, ele));
         match r {
-            None => self.0.push_back(value),
+            None => self.0.push_front(value),
             Some((index, ele)) => {
                 if *ele == value {
                     if overwrite {
@@ -41,10 +41,10 @@ impl<T: PartialOrd> SortedQueue<T> {
                         return Err(ErrorInner::DuplicateAt(index));
                     }
                 } else {
-                    if index == self.0.len() {
+                    if index + 1 == self.0.len() {
                         self.0.push_back(value);
                     } else {
-                        self.insert(index, value)
+                        self.insert(index + 1, value)
                     }
                 }
             }
