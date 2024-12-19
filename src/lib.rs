@@ -23,7 +23,7 @@ impl<T: PartialOrd> SortedQueue<T> {
             .0
             .iter()
             .enumerate()
-            .find(|(_index, ele)| value <= **ele)
+            .rfind(|(_index, ele)| value <= **ele)
             .map(
                 |(index, ele)| {
                     if *ele == value {
